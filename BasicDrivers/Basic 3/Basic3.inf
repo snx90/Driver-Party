@@ -1,0 +1,90 @@
+;
+; Basic3.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Sample ; TODO: edit Class
+ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=Basic3.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=SampleClassReg
+
+[SampleClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+Basic3.sys  = 1,,
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%Basic3.DeviceDesc%=Basic3_Device, Root\Basic3 ; TODO: edit hw-id
+
+[Basic3_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+Basic3.sys
+
+;-------------- Service installation
+[Basic3_Device.NT.Services]
+AddService = Basic3,%SPSVCINST_ASSOCSERVICE%, Basic3_Service_Inst
+
+; -------------- Basic3 driver install sections
+[Basic3_Service_Inst]
+DisplayName    = %Basic3.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\Basic3.sys
+
+;
+;--- Basic3_Device Coinstaller installation ------
+;
+
+[DestinationDirs]
+Basic3_Device_CoInstaller_CopyFiles = 11
+
+[Basic3_Device.NT.CoInstallers]
+AddReg=Basic3_Device_CoInstaller_AddReg
+CopyFiles=Basic3_Device_CoInstaller_CopyFiles
+
+[Basic3_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[Basic3_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[SourceDisksFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+[Basic3_Device.NT.Wdf]
+KmdfService =  Basic3, Basic3_wdfsect
+[Basic3_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+ClassName="Samples" ; TODO: edit ClassName
+DiskName = "Basic3 Installation Disk"
+Basic3.DeviceDesc = "Basic3 Device"
+Basic3.SVCDESC = "Basic3 Service"
