@@ -3,13 +3,18 @@
 --*/
 
 #include <ntddk.h>
-
+//
+// Use old-style declarators (when compiling with /W4 flag), see:
+// https://msdn.microsoft.com/en-us/library/b92s55e9.aspx
+//
+#pragma warning(disable:4131)
 #define FILE_DEVICE_BASIC 0x00002a7b
 #define IOCTL_Device_Function CTL_CODE(FILE_DEVICE_BASIC,\
                                        0x800,\
                                        METHOD_NEITHER,\
                                        FILE_READ_DATA | FILE_WRITE_DATA)
-//
+
+///////////////////////////////////////////////////////////////////////////
 // Function role type declarations
 //
 DRIVER_UNLOAD Basic3DriverUnload;
@@ -18,24 +23,20 @@ _Dispatch_type_(IRP_MJ_DEVICE_CONTROL)
 DRIVER_DISPATCH Basic3DispatchDeviceControl;
 DRIVER_INITIALIZE DriverEntry;
 
+///////////////////////////////////////////////////////////////////////////
+// Function prototypes
+//
+NTSTATUS Basic3HandleIoctlSayHello(PIRP pIrp, PIO_STACK_LOCATION pIoStackIrp);
+
+///////////////////////////////////////////////////////////////////////////
+// Global variables
+//
 LPCWSTR g_pszDeviceName = L"\\Device\\basicDevice";
 LPCWSTR g_pszDeviceLink = L"\\DosDevices\\basicDevice";
 
-_Use_decl_annotations_
-VOID
-Basic3DriverUnload (
-    _In_ PDRIVER_OBJECT pDriverObject
-    )
-/*++
-
---*/
-{
-    UNREFERENCED_PARAMETER(pDriverObject);
-    PAGED_CODE();
-
-    DbgPrintEx(77, 0, "[DriverUnload]\n");
-}
-
+///////////////////////////////////////////////////////////////////////////
+// IRP Dispatchers
+//
 _Use_decl_annotations_
 NTSTATUS
 Basic3DefaultDispatch (
@@ -83,6 +84,7 @@ Basic3DispatchDeviceControl (
     UNREFERENCED_PARAMETER(pDeviceObject);
     PAGED_CODE();
 
+    NTSTATUS ntStatus;
     PIO_STACK_LOCATION pIoStackIrp;
     ULONG ulIoControlCode;
 
@@ -105,25 +107,66 @@ Basic3DispatchDeviceControl (
         return STATUS_NOT_SUPPORTED;
     }
 
-    //
-    // TODO Define a CTL_CODE and implement the corresponding
-    // IOCTL handler that will be called from here.
-    //
-
-    //
-    // Here we could implement some specific functionality for
-    // IRP_MJ_DEVICE_CONTROL (or implement a switch statement
-    // in a generic routine). For simplicity, in this case we
-    // just print a different message from the one shown by the
-    // default dispatch function.
-    //
-    pIrp->IoStatus.Status = STATUS_SUCCESS;
-    IoCompleteRequest(pIrp,
-        IO_NO_INCREMENT);
-
     DbgPrintEx(77, 0, "[Basic1DispatchDeviceControl]\n");
-    return pIrp->IoStatus.Status;
+
+    //
+    // Call the IOCTL handler
+    //
+    ntStatus = Basic3HandleIoctlSayHello(pIrp, pIoStackIrp);
+
+    pIrp->IoStatus.Status = ntStatus;
+    IoCompleteRequest(pIrp,
+                      IO_NO_INCREMENT);
+
+    return ntStatus;
 }
+
+///////////////////////////////////////////////////////////////////////////
+// IOCTL Handler
+//
+_Use_decl_annotations_
+NTSTATUS
+Basic3HandleIoctlSayHello (
+    _In_ PIRP pIrp,
+    _In_ PIO_STACK_LOCATION pIoStackIrp
+    )
+{
+    UNREFERENCED_PARAMETER(pIrp);
+    UNREFERENCED_PARAMETER(pIoStackIrp);
+    PAGED_CODE();
+
+    DbgPrintEx(77, 0, "[Basic3HandleIoctlSayHello] - Hello!\n");
+
+    return STATUS_SUCCESS;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Basic driver functions (i.e., entry point and unload)
+//
+_Use_decl_annotations_
+VOID
+Basic3DriverUnload (
+    _In_ PDRIVER_OBJECT pDriverObject
+    )
+/*++
+
+--*/
+{
+    PAGED_CODE();
+
+    UNICODE_STRING szUDeviceLink;
+
+    //
+    // Delete symlink and device
+    //
+    RtlInitUnicodeString(&szUDeviceLink,
+                         g_pszDeviceLink);
+    IoDeleteSymbolicLink(&szUDeviceLink);
+    IoDeleteDevice(pDriverObject->DeviceObject);
+
+    DbgPrintEx(77, 0, "[DriverUnload]\n");
+}
+
 
 _Use_decl_annotations_
 NTSTATUS
