@@ -40,8 +40,8 @@ LPCWSTR g_pszDeviceLink = L"\\DosDevices\\basicDevice";
 _Use_decl_annotations_
 NTSTATUS
 Basic3DefaultDispatch (
-    _In_ PDEVICE_OBJECT pDeviceObject,
-    _In_ PIRP pIrp
+    _Inout_ PDEVICE_OBJECT pDeviceObject,
+    _Inout_ PIRP pIrp
     )
 /*++
 This function just completes all IRP's that come its way.
