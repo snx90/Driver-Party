@@ -147,7 +147,11 @@
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Main.c" />
+    <ClCompile Include="Bdrv3.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Bdrv3.h" />
+    <ClInclude Include="Common.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

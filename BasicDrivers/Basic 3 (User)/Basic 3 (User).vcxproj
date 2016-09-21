@@ -142,6 +142,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Bdrv3u.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Bdrv3u.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

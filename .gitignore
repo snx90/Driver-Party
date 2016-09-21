@@ -81,3 +81,24 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+*.suo
+BasicDrivers/Release/Basic3.sys
+BasicDrivers/Release/Basic3.pdb
+BasicDrivers/Release/Basic3.inf
+BasicDrivers/Release/Basic3.cer
+BasicDrivers/Release/Basic2.sys
+BasicDrivers/Release/Basic2.inf
+BasicDrivers/Release/Basic2.pdb
+BasicDrivers/Release/Basic2.cer
+BasicDrivers/Release/Basic1.sys
+BasicDrivers/Release/Basic1.inf
+BasicDrivers/Release/Basic1.cer
+BasicDrivers/Release/Basic 3/Basic3.sys
+BasicDrivers/Release/Basic1.pdb
+BasicDrivers/Release/Basic 3/Basic3.inf
+*.cat
+*.pdb
+*.ipdb
+*.iobj
+*.sys
+*.inf
