@@ -1,24 +1,38 @@
 /*--
+
     Copyright (c) Santos Merino del Pozo.  All rights reserved.
     Use of this source code is governed by a MIT-style license which can be
     found in the LICENSE file.
+
     Module Name:
-        Bdrv3.c
+
+        Bdrv4.c
+
     Summary:
-        This module extends "Basic 2" project, so IRP_MJ_DEVICE_CONTROL code
-        has a specific dispatcher to handle a predefined IOCTL sent by a
-        user-mode application (see "Basic 3 (User)" project).
+
+        This module extends "Basic 3" project, now calling PsCreateSystemThread
+        in the IOCTL handler. This is to check whether using a NULL ProcessHand-
+        le parameter, the new thread runs in the context of the System (expected)
+        or the calling process (not expected). 
+
+        See exercise 1 about Windows system threads (chapter 3) in the awesome 
+        "Practical Reverse Engineering" book by Bruce Dang.
+
     Author:
+
         Santos Merino del Pozo (@santitox) - Initial version
+
     Contact:
+
         santos.research@gmail.com
+
 --*/
 
-#include "Bdrv3.h"
+#include "Bdrv4.h"
 
 _Use_decl_annotations_
 NTSTATUS
-Bdrv3DefaultDispatch (
+Bdrv4DefaultDispatch (
     _Inout_ PDEVICE_OBJECT pDeviceObject,
     _Inout_ PIRP pIrp
     )
@@ -50,7 +64,7 @@ Bdrv3DefaultDispatch (
 
 _Use_decl_annotations_
 NTSTATUS
-Bdrv3DispatchDeviceControl (
+Bdrv4DispatchDeviceControl (
     _Inout_ PDEVICE_OBJECT pDeviceObject,
     _Inout_ PIRP pIrp
     )
@@ -73,7 +87,7 @@ Bdrv3DispatchDeviceControl (
 
     if (!pIoStackIrp)
     {
-        DbgPrintEx(77, 0, "[Bdrv3DispatchDeviceControl] - "
+        DbgPrintEx(77, 0, "[Bdrv4DispatchDeviceControl] - "
                            "Failed to get a pointer to the IO stack of the caller\n");
         return STATUS_INTERNAL_ERROR;
     }
@@ -85,17 +99,17 @@ Bdrv3DispatchDeviceControl (
 
     if (ulIoControlCode != IOCTL_Device_Function)
     {
-        DbgPrintEx(77, 0, "[Bdrv3DispatchDeviceControl] - "
+        DbgPrintEx(77, 0, "[Bdrv4DispatchDeviceControl] - "
                           "IOCTL not supported\n");
         return STATUS_NOT_SUPPORTED;
     }
 
-    DbgPrintEx(77, 0, "[Bdrv3DispatchDeviceControl]\n");
+    DbgPrintEx(77, 0, "[Bdrv4DispatchDeviceControl]\n");
 
     //
     // Call the IOCTL handler
     //
-    ntStatus = Bdrv3HandleIoctlSayHello(pIrp, pIoStackIrp);
+    ntStatus = Bdrv4HandleIoctlSayHello(pIrp, pIoStackIrp);
 
     pIrp->IoStatus.Status = ntStatus;
     IoCompleteRequest(pIrp,
@@ -106,7 +120,7 @@ Bdrv3DispatchDeviceControl (
 
 _Use_decl_annotations_
 NTSTATUS
-Bdrv3HandleIoctlSayHello (
+Bdrv4HandleIoctlSayHello (
     _In_ PIRP pIrp,
     _In_ PIO_STACK_LOCATION pIoStackIrp
     )
@@ -115,18 +129,61 @@ Bdrv3HandleIoctlSayHello (
     UNREFERENCED_PARAMETER(pIoStackIrp);
     PAGED_CODE();
 
-    //
-    // This is the IOCTL handler for IOCTL_Device_Function. In this
-    // tiny example we just print a (Hello!) message
-    //
-    DbgPrintEx(77, 0, "[Bdrv3HandleIoctlSayHello] - Hello!\n");
+    NTSTATUS ntStatus;
+    HANDLE hThread;
+
+    hThread = NULL;
+    ntStatus = PsCreateSystemThread(&hThread,
+                                    THREAD_ALL_ACCESS,
+                                    NULL,
+                                    NULL, // To run on SYSTEM context
+                                    NULL,
+                                    StartRoutine,
+                                    NULL);
+
+    if (!NT_SUCCESS(ntStatus))
+    {
+        DbgPrintEx(77, 0, "[Bdrv4HandleIoctlSayHello] - "
+            "PsCreateSystemThread() failed (%.8Xh)\n", ntStatus);
+        return ntStatus;
+    }
+    
+    ZwClose(hThread);
 
     return STATUS_SUCCESS;
 }
 
 _Use_decl_annotations_
 VOID
-Bdrv3DriverUnload (
+SayHello (
+    _In_ PVOID pParam
+    )
+{
+    UNREFERENCED_PARAMETER(pParam);
+
+    DbgPrintEx(77, 0, "[SayHello] - Hello!\n");
+}
+
+_Use_decl_annotations_
+VOID
+StartRoutine (
+    _In_ PVOID pStartContext
+    )
+{
+    UNREFERENCED_PARAMETER(pStartContext);
+
+    LARGE_INTEGER Timeout = { 0 };
+    Timeout.QuadPart = 1000000;
+    while (1)
+    {
+        KeDelayExecutionThread(KernelMode, FALSE, &Timeout);
+        DbgPrintEx(77, 0, "[StartRoutine] - Running!\n");
+    }
+}
+
+_Use_decl_annotations_
+VOID
+Bdrv4DriverUnload (
     _In_ PDRIVER_OBJECT pDriverObject
     )
 {
@@ -145,7 +202,7 @@ Bdrv3DriverUnload (
     IoDeleteSymbolicLink(&szUDeviceLink);
     IoDeleteDevice(pDriverObject->DeviceObject);
 
-    DbgPrintEx(77, 0, "[Bdrv3DriverUnload] - Device and symlink deleted\n");
+    DbgPrintEx(77, 0, "[Bdrv4DriverUnload] - Device and symlink deleted\n");
 }
 
 _Use_decl_annotations_
@@ -204,7 +261,7 @@ DriverEntry (
     // Set default unload function called when stopping the corresponding
     // service (e.g., sc stop from an instance of the command interpreter Cmd.exe)
     //
-    pDriverObject->DriverUnload = Bdrv3DriverUnload;
+    pDriverObject->DriverUnload = Bdrv4DriverUnload;
 
     //
     // We assign the same default dispatch routine to all IRP function
@@ -223,7 +280,7 @@ DriverEntry (
         // should be seen. For a more elaborated driver, see "Basic 3" which
         // includes a user-land application sending IOCTLs to the driver
         //
-        pDriverObject->MajorFunction[i] = Bdrv3DefaultDispatch;
+        pDriverObject->MajorFunction[i] = Bdrv4DefaultDispatch;
     }
 
     //
@@ -232,7 +289,7 @@ DriverEntry (
     // has opened the corresponding device (i.e., basicDevice in this case).
     // See project "Basic 3 (User)" for an example of such application
     //
-    pDriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = Bdrv3DispatchDeviceControl;
+    pDriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = Bdrv4DispatchDeviceControl;
 
     DbgPrintEx(77, 0, "[DriverEntry] - Device and symlink created\n");
 

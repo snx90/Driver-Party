@@ -102,3 +102,4 @@ BasicDrivers/Release/Basic 3/Basic3.inf
 *.iobj
 *.sys
 *.inf
+BasicDrivers/Release/Basic4.cer

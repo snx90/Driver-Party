@@ -1,15 +1,25 @@
 /*--
+
     Copyright (c) Santos Merino del Pozo.  All rights reserved.
     Use of this source code is governed by a MIT-style license which can be
     found in the LICENSE file.
+
     Module Name:
-        Bdrv3.h
+
+        Bdrv4.h
+
     Summary:
-        This header contains definitions for Bdrv3.c
+
+        This header contains definitions for Bdrv4.c
+
     Author:
+
         Santos Merino del Pozo (@santitox) - Initial version
+
     Contact:
+
         santos.research@gmail.com
+
 --*/
 
 #pragma once
@@ -20,7 +30,7 @@
 #pragma warning(disable:4131)
 
 #include <ntddk.h>
-#include "Common.h"
+#include "..\Basic 3\Common.h"
 
 #define FILE_DEVICE_BASIC 0x00002a7b
 
@@ -35,7 +45,7 @@ LPCWSTR g_pszDeviceLink = L"\\DosDevices\\basicDevice";
 //
 _Function_class_(DRIVER_DISPATCH)
 NTSTATUS
-Bdrv3DefaultDispatch (
+Bdrv4DefaultDispatch (
     _Inout_ PDEVICE_OBJECT pDeviceObject,
     _Inout_ PIRP pIrp
     );
@@ -43,20 +53,30 @@ Bdrv3DefaultDispatch (
 _Dispatch_type_(IRP_MJ_DEVICE_CONTROL)
 _Function_class_(DRIVER_DISPATCH)
 NTSTATUS
-Bdrv3DispatchDeviceControl (
+Bdrv4DispatchDeviceControl (
     _Inout_ PDEVICE_OBJECT pDeviceObject,
     _Inout_ PIRP pIrp
     );
 
 NTSTATUS
-Bdrv3HandleIoctlSayHello (
-    PIRP pIrp,
-    PIO_STACK_LOCATION pIoStackIrp
+Bdrv4HandleIoctlSayHello (
+    _In_ PIRP pIrp,
+    _In_ PIO_STACK_LOCATION pIoStackIrp
+    );
+
+VOID
+SayHello (
+    _In_ PVOID pParam
+    );
+
+VOID
+StartRoutine (
+    _In_ PVOID pStartContext
     );
 
 _Function_class_(DRIVER_UNLOAD)
 VOID
-Bdrv3DriverUnload (
+Bdrv4DriverUnload (
     _In_ PDRIVER_OBJECT pDriverObject
     );
 
@@ -66,3 +86,4 @@ DriverEntry (
     _In_ PDRIVER_OBJECT pDriverObject,
     _In_ PUNICODE_STRING pRegistryPath
     );
+// EoF
