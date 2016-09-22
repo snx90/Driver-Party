@@ -1,17 +1,27 @@
 /*--
+
     Copyright (c) Santos Merino del Pozo.  All rights reserved.
     Use of this source code is governed by a MIT-style license which can be
     found in the LICENSE file.
+
     Module Name:
+
         Bdrv3.c
+
     Summary:
+
         This module extends "Basic 2" project, so IRP_MJ_DEVICE_CONTROL code
         has a specific dispatcher to handle a predefined IOCTL sent by a
         user-mode application (see "Basic 3 (User)" project).
+
     Author:
+
         Santos Merino del Pozo (@santitox) - Initial version
+
     Contact:
+
         santos.research@gmail.com
+
 --*/
 
 #include "Bdrv3.h"

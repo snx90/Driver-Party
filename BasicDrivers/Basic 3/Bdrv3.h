@@ -1,15 +1,25 @@
 /*--
+
     Copyright (c) Santos Merino del Pozo.  All rights reserved.
     Use of this source code is governed by a MIT-style license which can be
     found in the LICENSE file.
+
     Module Name:
+
         Bdrv3.h
+
     Summary:
+
         This header contains definitions for Bdrv3.c
+
     Author:
+
         Santos Merino del Pozo (@santitox) - Initial version
+
     Contact:
+
         santos.research@gmail.com
+
 --*/
 
 #pragma once
@@ -66,3 +76,4 @@ DriverEntry (
     _In_ PDRIVER_OBJECT pDriverObject,
     _In_ PUNICODE_STRING pRegistryPath
     );
+// EoF
