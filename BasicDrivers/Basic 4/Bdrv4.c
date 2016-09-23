@@ -72,6 +72,8 @@ Bdrv4DispatchDeviceControl (
     UNREFERENCED_PARAMETER(pDeviceObject);
     PAGED_CODE();
 
+    HANDLE hThread;
+    HANDLE hHandle;
     NTSTATUS ntStatus;
     PIO_STACK_LOCATION pIoStackIrp;
     ULONG ulIoControlCode;
@@ -107,9 +109,37 @@ Bdrv4DispatchDeviceControl (
     DbgPrintEx(77, 0, "[Bdrv4DispatchDeviceControl]\n");
 
     //
-    // Call the IOCTL handler
+    // Call the IOCTL handler using a system thread
     //
-    ntStatus = Bdrv4HandleIoctlSayHello(pIrp, pIoStackIrp);
+    hThread = NULL;
+
+    //
+    // To run on SYSTEM context
+    //
+    hHandle = NULL;
+
+    //
+    // To run on current process context (i.e., the caller process
+    // sending the IOCTL to the device)
+    //
+    // hHandle = ZwCurrentProcess();
+
+    ntStatus = PsCreateSystemThread(&hThread,
+                                    THREAD_ALL_ACCESS,
+                                    NULL,
+                                    hHandle,
+                                    NULL,
+                                    Bdrv4HandleIoctlSayHello,
+                                    NULL);
+
+    if (!NT_SUCCESS(ntStatus))
+    {
+        DbgPrintEx(77, 0, "[Bdrv4DispatchDeviceControl] - "
+            "PsCreateSystemThread() failed (%.8Xh)\n", ntStatus);
+        return ntStatus;
+    }
+
+    ZwClose(hThread);
 
     pIrp->IoStatus.Status = ntStatus;
     IoCompleteRequest(pIrp,
@@ -119,66 +149,29 @@ Bdrv4DispatchDeviceControl (
 }
 
 _Use_decl_annotations_
-NTSTATUS
+VOID
 Bdrv4HandleIoctlSayHello (
-    _In_ PIRP pIrp,
-    _In_ PIO_STACK_LOCATION pIoStackIrp
-    )
-{
-    UNREFERENCED_PARAMETER(pIrp);
-    UNREFERENCED_PARAMETER(pIoStackIrp);
-    PAGED_CODE();
-
-    NTSTATUS ntStatus;
-    HANDLE hThread;
-
-    hThread = NULL;
-    ntStatus = PsCreateSystemThread(&hThread,
-                                    THREAD_ALL_ACCESS,
-                                    NULL,
-                                    NULL, // To run on SYSTEM context
-                                    NULL,
-                                    StartRoutine,
-                                    NULL);
-
-    if (!NT_SUCCESS(ntStatus))
-    {
-        DbgPrintEx(77, 0, "[Bdrv4HandleIoctlSayHello] - "
-            "PsCreateSystemThread() failed (%.8Xh)\n", ntStatus);
-        return ntStatus;
-    }
-    
-    ZwClose(hThread);
-
-    return STATUS_SUCCESS;
-}
-
-_Use_decl_annotations_
-VOID
-SayHello (
-    _In_ PVOID pParam
-    )
-{
-    UNREFERENCED_PARAMETER(pParam);
-
-    DbgPrintEx(77, 0, "[SayHello] - Hello!\n");
-}
-
-_Use_decl_annotations_
-VOID
-StartRoutine (
     _In_ PVOID pStartContext
     )
 {
     UNREFERENCED_PARAMETER(pStartContext);
-
+    
+    //
+    // Set an execution interval of 5 seconds
+    //
     LARGE_INTEGER Timeout = { 0 };
-    Timeout.QuadPart = 1000000;
-    while (1)
+    Timeout.QuadPart = RELATIVE(SECONDS(5));
+    for (UINT8 TicToc = 0; TicToc < 20; TicToc++)
     {
         KeDelayExecutionThread(KernelMode, FALSE, &Timeout);
-        DbgPrintEx(77, 0, "[StartRoutine] - Running!\n");
+        DbgPrintEx(77, 0, "[Bdrv4HandleIoctlSayHello] - Hello!\n");
     }
+
+    //
+    // Terminate the system thread at this point, hence the
+    // function will not return
+    //
+    PsTerminateSystemThread(STATUS_SUCCESS);
 }
 
 _Use_decl_annotations_

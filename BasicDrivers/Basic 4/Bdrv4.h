@@ -31,6 +31,7 @@
 
 #include <ntddk.h>
 #include "..\Basic 3\Common.h"
+#include "TimeInterval.h"
 
 #define FILE_DEVICE_BASIC 0x00002a7b
 
@@ -58,19 +59,8 @@ Bdrv4DispatchDeviceControl (
     _Inout_ PIRP pIrp
     );
 
-NTSTATUS
+VOID
 Bdrv4HandleIoctlSayHello (
-    _In_ PIRP pIrp,
-    _In_ PIO_STACK_LOCATION pIoStackIrp
-    );
-
-VOID
-SayHello (
-    _In_ PVOID pParam
-    );
-
-VOID
-StartRoutine (
     _In_ PVOID pStartContext
     );
 
