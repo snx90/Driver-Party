@@ -103,3 +103,6 @@ BasicDrivers/Release/Basic 3/Basic3.inf
 *.sys
 *.inf
 BasicDrivers/Release/Basic4.cer
+BasicDrivers/BasicDrivers.VC.db
+BasicDrivers/BasicDrivers.VC.VC.opendb
+*.cer
